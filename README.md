@@ -1,24 +1,38 @@
-# Cerebro
+<p align="center">
+  <img src="design/banner.svg" width="100%" alt="Cerebro — self-hosted feature flags, promoted through an ordered pipeline">
+</p>
+
+<p align="center">
+  <a href="docs/overview.md"><b>Overview</b></a> &nbsp;·&nbsp;
+  <a href="#getting-started">Getting started</a> &nbsp;·&nbsp;
+  <a href="#api">API</a> &nbsp;·&nbsp;
+  <a href="#dashboard">Dashboard</a> &nbsp;·&nbsp;
+  <a href="packages/sdk/README.md">SDK</a> &nbsp;·&nbsp;
+  <a href="design/direction.md">Design</a>
+</p>
+
+---
 
 A self-hosted feature flag service. Flags belong to an **application** and are
 created in the lowest environment, then promoted upward through an ordered
 pipeline (dev → qa → prod). Applications read their own flags through a
 key-value HTTP endpoint; the dashboard and management API expose full metadata.
 
-Two applications may each have a flag called `new-checkout` — they are unrelated
-flags with their own type, default and per-environment state, and neither ever
-sees the other's.
+> Two applications may each have a flag called `new-checkout` — they are
+> unrelated flags with their own type, default and per-environment state, and
+> neither ever sees the other's.
 
 **[docs/overview.md](docs/overview.md)** explains what the service does, with
-diagrams — start there. The specification is [`plan/foundation.md`](plan/foundation.md). All eight phases
-are implemented: scaffold, schema, core domain, management API, evaluation API,
-dashboard, admin surfaces, and the typed SDK. The dashboard's visual direction is
-in [`design/direction.md`](design/direction.md).
+diagrams — start there. The specification is
+[`plan/foundation.md`](plan/foundation.md). All eight phases are implemented:
+scaffold, schema, core domain, management API, evaluation API, dashboard, admin
+surfaces, and the typed SDK. The dashboard's visual direction is in
+[`design/direction.md`](design/direction.md).
 
-## Stack
+**Stack.** Bun workspaces · Hono on `Bun.serve` · PostgreSQL 16 · Drizzle ORM ·
+Zod · `bun test` · Next.js 15 App Router + Tailwind v4.
 
-Bun workspaces · Hono on `Bun.serve` · PostgreSQL 16 · Drizzle ORM · Zod ·
-`bun test` · Next.js 15 App Router + Tailwind v4.
+---
 
 ## Getting started
 
@@ -35,23 +49,7 @@ The seed creates `admin@local` (admin) and `dev@local` (developer with full
 rights on dev and qa, read-only on prod), the three environments, and a
 `default` application to put flags in.
 
-## Layout
-
-| Path | What lives there |
-|---|---|
-| `apps/api` | Hono server — evaluation and management route trees |
-| `apps/web` | Next.js dashboard |
-| `packages/db` | Drizzle schema, migrations, seed — the authoritative data model |
-| `packages/core` | Domain layer: rbac, applications, flags, promotion, payload, audit |
-| `packages/contracts` | Zod schemas and types shared by api and web |
-| `packages/sdk` | Client library and `cerebro-codegen` — see its [README](packages/sdk/README.md) |
-| `design/` | Visual direction and the flag matrix reference render |
-| `scripts/` | Acceptance walkthroughs |
-
-The Next.js app never imports `packages/core` or `packages/db` — it talks to the
-API over HTTP, so there is exactly one authorization path.
-
-## Commands
+### Commands
 
 ```bash
 bun run dev          # Postgres + API + dashboard
@@ -65,7 +63,7 @@ bun run db:reset     # drop and recreate the schema (development only)
 `bun test` uses a dedicated `cerebro_test` database, created and migrated
 automatically on first run.
 
-## Acceptance scripts
+### Acceptance scripts
 
 With the API running and the database seeded:
 
@@ -76,6 +74,26 @@ bash scripts/codegen-check.sh      # cerebro-codegen output narrows get() per ke
 ```
 
 `walkthrough.sh` creates `new-checkout`; run it before the other two.
+
+---
+
+## Layout
+
+| Path | What lives there |
+|---|---|
+| `apps/api` | Hono server — evaluation and management route trees |
+| `apps/web` | Next.js dashboard |
+| `packages/db` | Drizzle schema, migrations, seed — the authoritative data model |
+| `packages/core` | Domain layer: rbac, applications, flags, promotion, payload, audit |
+| `packages/contracts` | Zod schemas and types shared by api and web |
+| `packages/sdk` | Client library and `cerebro-codegen` — see its [README](packages/sdk/README.md) |
+| `design/` | Visual direction, the flag matrix reference render, and the script that draws it |
+| `scripts/` | Acceptance walkthroughs |
+
+The Next.js app never imports `packages/core` or `packages/db` — it talks to the
+API over HTTP, so there is exactly one authorization path.
+
+---
 
 ## API
 
@@ -97,22 +115,39 @@ path has no route, so the two cannot drift apart.
 Two route trees on one server, sharing no middleware, so they can be split into
 separate deployments later without touching handlers.
 
-**Evaluation** — `Authorization: Bearer <sdk key>`. The application *and*
-environment come from the key, never from a path or query parameter — so the
-same build runs everywhere and one application never sees another's flags.
+### Evaluation
+
+`Authorization: Bearer <sdk key>`. The application *and* environment come from
+the key, never from a path or query parameter — so the same build runs
+everywhere and one application never sees another's flags.
 
 | Method | Path | |
 |---|---|---|
 | GET | `/v1/flags` | Flat key-value map. `ETag`, `Cache-Control: max-age=30`, 304 on `If-None-Match` |
 | GET | `/v1/config-version` | Cheap poll target |
 
-**Management** — session cookie `cerebro_session`. Base `/v1/mgmt`, plus
+### Management
+
+Session cookie `cerebro_session`. Base `/v1/mgmt`, plus
 `/v1/auth/{login,logout,me}`. Applications, flags, environments, api-keys,
 users, permissions and audit. Flags nest under their application:
 `/v1/mgmt/applications/{appKey}/flags/{key}`. Application, flag and environment
 keys are the public identifiers — UUIDs never appear in URLs.
 
+---
+
 ## Dashboard
+
+<p align="center">
+  <img src="design/matrix.svg" width="100%" alt="The flag matrix: four flags drawn as rails across dev, qa and prod. Solid track is where a flag has been promoted, dotted track is where it has not, a lit node means it is live there, and a signal bar marks every flag that is on somewhere.">
+</p>
+
+Promotion is a prefix — a flag is always promoted through an unbroken run
+starting at the lowest environment — so a flag's state across the pipeline is a
+*length*, not three independent values. The matrix draws it that way: **solid
+track** is where the flag has reached, **dotted track** is where it has not, and
+the join between them is the **frontier**. A **lit node** means the flag is live
+in that environment; a **hatched** one means it never got there.
 
 | Page | |
 |---|---|
@@ -128,6 +163,8 @@ keys are the public identifiers — UUIDs never appear in URLs.
 Every control's availability comes from the `can*` booleans the API computes for
 the signed-in user — the dashboard never re-derives permissions. Writes to a
 protected environment require typing the flag key to confirm.
+
+---
 
 ## Deviations from the spec
 
@@ -162,6 +199,8 @@ The `flag_environment.value` type backstop is a constraint trigger rather than a
 one team's release no longer invalidates every other application's cached
 payload. The ETag reads `W/"<app>-<env>-<version>"`.
 
+---
+
 ## Licence
 
 MIT — see [LICENSE](LICENSE).
@@ -171,3 +210,7 @@ The display face is [Chakra Petch](https://fonts.google.com/specimen/Chakra+Petc
 fetched at build time by `next/font` and self-hosted thereafter; nothing is
 loaded from a CDN at runtime.
 
+The two graphics above are drawn by [`design/render.py`](design/render.py) from
+the same tokens and devices as the running dashboard. Their type is set in those
+faces and written out as outlines, because GitHub renders README images in a
+sandbox that will not load a webfont.

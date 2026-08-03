@@ -10,3 +10,6 @@ out/
 
 # Licensed fonts are not ours to redistribute — see design/direction.md
 apps/web/src/fonts/
+
+# Font binaries design/render.py downloads to set the README graphics
+design/.fonts/

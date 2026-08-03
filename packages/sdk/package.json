@@ -1,0 +1,21 @@
+{
+  "name": "@cerebro/sdk",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "bin": {
+    "cerebro-codegen": "./src/codegen.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.typing.json",
+    "test": "bun --env-file=../../.env test"
+  },
+  "devDependencies": {
+    "@cerebro/tsconfig": "workspace:*",
+    "@types/bun": "^1.1.14",
+    "typescript": "^5.7.2"
+  }
+}

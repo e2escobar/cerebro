@@ -1,0 +1,7 @@
+{
+  "extends": "@cerebro/tsconfig/bun.json",
+  "include": ["src/**/*.ts", "test/**/*.ts"],
+  // The generated flag map is a module augmentation, so the narrowing check
+  // has to compile on its own — see tsconfig.typing.json.
+  "exclude": ["test/typing"]
+}

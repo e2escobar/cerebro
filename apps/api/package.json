@@ -1,0 +1,28 @@
+{
+  "name": "@cerebro/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun --env-file=../../.env --hot src/index.ts",
+    "start": "bun --env-file=../../.env src/index.ts",
+    "build": "bun build src/index.ts --target=bun --outdir=dist",
+    "typecheck": "tsc --noEmit",
+    "test": "bun --env-file=../../.env test"
+  },
+  "dependencies": {
+    "@cerebro/contracts": "workspace:*",
+    "@cerebro/core": "workspace:*",
+    "@cerebro/db": "workspace:*",
+    "drizzle-orm": "^0.38.3",
+    "hono": "^4.6.14",
+    "zod": "^3.24.1",
+    "zod-to-json-schema": "^3.25.2"
+  },
+  "devDependencies": {
+    "@cerebro/tsconfig": "workspace:*",
+    "@types/bun": "^1.1.14",
+    "postgres": "^3.4.9",
+    "typescript": "^5.7.2"
+  }
+}

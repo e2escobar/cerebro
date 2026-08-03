@@ -1,0 +1,41 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1785709212929,
+      "tag": "0000_dear_whiplash",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1785709226173,
+      "tag": "0001_flag_environment_value_type_guard",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1785709913478,
+      "tag": "0002_clever_jack_flag",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1785720925430,
+      "tag": "0003_eager_synch",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1785721447080,
+      "tag": "0004_glorious_steve_rogers",
+      "breakpoints": true
+    }
+  ]
+}

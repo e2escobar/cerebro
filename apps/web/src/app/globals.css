@@ -1,0 +1,672 @@
+@import "tailwindcss";
+
+/*
+ * Cerebro — instrument panel, not dashboard. See design/direction.md.
+ *
+ * Orange-red on near-black. The accent is a lightened, slightly desaturated
+ * take on the brand's #F45745 — at full saturation on a dark ground it halates,
+ * which the eye reads as glare rather than emphasis.
+ *
+ * Nothing is outlined: surfaces are separated by fill and striping, never by a
+ * border. Geometry is square throughout; the only curves are in the type.
+ */
+
+@theme {
+  --color-void: #07090c;
+  --color-surface: #0f151b;
+  --color-surface-2: #171f27;
+  --color-ink: #edf1f6;
+  --color-ink-dim: #8c99a8;
+  --color-signal: #ff7f6e;
+
+  --font-display: var(--font-display), ui-monospace, monospace;
+  --font-ui: var(--font-ui), ui-sans-serif, system-ui, sans-serif;
+  --font-data: var(--font-data), ui-monospace, "SF Mono", monospace;
+
+  --radius: 0;
+}
+
+:root {
+  --void: #07090c;
+  --surface: #0f151b;
+  --surface-2: #171f27;
+  --surface-3: #212c36;
+  --ink: #edf1f6;
+  --ink-dim: #8c99a8;
+
+  /*
+   * The one brand accent. Lighter and a touch less saturated than the raw
+   * brand red: on a dark ground a mid-lightness saturated red halates, which
+   * reads as glare rather than emphasis. This measures 8.1:1 on the ground,
+   * against 6.0:1 before.
+   */
+  --signal: #ff7f6e;
+  --signal-ink: #1a0906;
+  --signal-wash: rgb(255 127 110 / 0.14);
+
+  /*
+   * Environment ramp by rank, in HUD semantics — information, caution,
+   * critical — so a flag visibly heats up as it nears production.
+   */
+  --env-low: #5be0d0;
+  --env-mid: #f5b655;
+  --env-high: #ff7f6e;
+
+  --node: 14px;
+  --sidebar-w: 212px;
+}
+
+/* The console is dark. There is no light mode — this is an ops surface. */
+html {
+  background: var(--void);
+  color-scheme: dark;
+}
+
+/* Checkboxes and other native controls take the brand, not Chrome's blue. */
+input[type="checkbox"],
+input[type="radio"],
+progress,
+::selection {
+  accent-color: var(--signal);
+}
+
+::selection {
+  background: var(--signal);
+  color: var(--signal-ink);
+}
+
+body {
+  margin: 0;
+  background:
+    /* A faint grid, the way an instrument face is ruled. */
+    linear-gradient(rgb(255 255 255 / 0.018) 1px, transparent 1px) 0 0 / 100% 46px,
+    linear-gradient(90deg, rgb(255 255 255 / 0.018) 1px, transparent 1px) 0 0 / 46px 100%,
+    var(--void);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/*
+ * Component classes live in the components layer so Tailwind utilities —
+ * which Tailwind v4 puts in a later layer — can still override them. Unlayered
+ * CSS beats layered CSS regardless of specificity, which is the trap here.
+ */
+@layer components {
+
+/* ── type ──────────────────────────────────────────────────────────────── */
+
+/* The display face sets the name of the product, and nothing else. */
+.wordmark {
+  font-family: var(--font-display);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+/* Anything a person might copy, diff or type. */
+.hud,
+.mono,
+code,
+kbd,
+samp {
+  font-family: var(--font-data);
+  letter-spacing: 0;
+}
+
+input,
+select,
+textarea,
+button,
+th {
+  font-family: inherit;
+}
+
+.eyebrow {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+.title {
+  font-family: var(--font-ui);
+  font-size: 27px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.prose {
+  font-family: var(--font-ui);
+}
+
+/* ── surfaces ──────────────────────────────────────────────────────────── */
+
+.panel {
+  background: var(--surface);
+  position: relative;
+}
+
+/*
+ * HUD corner ticks. Framing without containment — the panel is still an open
+ * plane, the ticks just mark where it begins and ends.
+ */
+.panel-ticks::before,
+.panel-ticks::after {
+  content: "";
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  background:
+    linear-gradient(var(--signal), var(--signal)) 0 0 / 100% 2px no-repeat,
+    linear-gradient(var(--signal), var(--signal)) 0 0 / 2px 100% no-repeat;
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+.panel-ticks::before {
+  top: 0;
+  left: 0;
+}
+
+.panel-ticks::after {
+  bottom: 0;
+  right: 0;
+  transform: rotate(180deg);
+}
+
+/* Rows are told apart by fill, not by rules. */
+.stripe > * {
+  background: var(--surface);
+}
+
+.stripe > *:nth-child(even) {
+  background: var(--surface-2);
+}
+
+/* Diagonal hatch: this exists, but is not available to you. */
+.hatch {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgb(140 153 168 / 0.24) 0 2px,
+    transparent 2px 6px
+  );
+}
+
+/* ── controls ──────────────────────────────────────────────────────────── */
+
+/* `:where` keeps specificity at zero so Tailwind's width utilities still win. */
+:where(.field) {
+  width: 100%;
+}
+
+.field {
+  background: var(--surface-2);
+  border: 0;
+  border-radius: 0;
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: 15px;
+  padding: 11px 13px;
+  appearance: none;
+}
+
+.field::placeholder {
+  color: var(--ink-dim);
+}
+
+.field:disabled {
+  background: transparent;
+  color: var(--ink-dim);
+  cursor: not-allowed;
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgb(140 153 168 / 0.18) 0 2px,
+    transparent 2px 6px
+  );
+}
+
+select.field {
+  padding-right: 30px;
+  background-image: linear-gradient(45deg, transparent 50%, var(--ink-dim) 50%),
+    linear-gradient(135deg, var(--ink-dim) 50%, transparent 50%);
+  background-position:
+    calc(100% - 16px) calc(50% + 1px),
+    calc(100% - 11px) calc(50% + 1px);
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+}
+
+.btn {
+  background: var(--surface-3);
+  color: var(--ink);
+  border: 0;
+  border-radius: 0;
+  font-family: var(--font-ui);
+  font-weight: 500;
+  font-size: 12px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  padding: 10px 15px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.12s ease;
+}
+
+.btn:hover:not(:disabled) {
+  background: #2b3946;
+}
+
+.btn:disabled {
+  color: var(--ink-dim);
+  cursor: not-allowed;
+  background: transparent;
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgb(140 153 168 / 0.16) 0 2px,
+    transparent 2px 6px
+  );
+}
+
+.btn-primary {
+  background: var(--signal);
+  color: var(--signal-ink);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #ff9384;
+}
+
+.btn-danger {
+  background: transparent;
+  color: var(--signal);
+  box-shadow: inset 0 0 0 1px rgb(255 127 110 / 0.45);
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: var(--signal-wash);
+}
+
+/* A visible focus state that is a glow, not an outline. */
+*:focus-visible {
+  outline: none;
+  box-shadow:
+    inset 0 0 0 1px var(--signal),
+    0 0 0 3px var(--signal-wash);
+}
+
+.badge {
+  font-family: var(--font-ui);
+  font-weight: 500;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  background: var(--surface-3);
+  padding: 4px 8px;
+  display: inline-block;
+  line-height: 1;
+}
+
+.badge-safe {
+  color: var(--env-low);
+  background: rgb(91 224 208 / 0.15);
+}
+
+.badge-protected,
+.badge-signal {
+  color: var(--signal);
+  background: var(--signal-wash);
+}
+
+/*
+ * ── the rail ───────────────────────────────────────────────────────────
+ *
+ * Promotion is a prefix (spec §14): a flag is always promoted through an
+ * unbroken run from rank 0 outward, so a row is one line whose solid portion
+ * is how far the flag has reached. The join with the hatched portion is the
+ * frontier. `enabled` is the independent second axis, carried by the node.
+ */
+
+.track {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+}
+
+.stop {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding-top: 5px;
+}
+
+.stop::before,
+.stop::after {
+  content: "";
+  position: absolute;
+  top: calc(5px + var(--node) / 2);
+  height: 3px;
+  width: 50%;
+  transform: translateY(-1.5px);
+}
+
+.stop::before {
+  right: 50%;
+}
+
+.stop::after {
+  left: 50%;
+}
+
+.stop.origin::before,
+.stop.terminus::after {
+  content: none;
+}
+
+/*
+ * Arriving and departing track are stated separately: the frontier is exactly
+ * the node whose track arrives laid and departs unlaid — so the two must not
+ * be mistakable for each other. Laid track is a solid bar, notched like a
+ * ruler; unlaid track is a thin, sparse dotted line sitting well back.
+ */
+.in-laid::before,
+.out-laid::after {
+  background:
+    repeating-linear-gradient(90deg, rgb(0 0 0 / 0.45) 0 1px, transparent 1px 13px),
+    linear-gradient(var(--c), var(--c));
+}
+
+.in-ahead::before,
+.out-ahead::after {
+  height: 1px;
+  top: calc(5px + var(--node) / 2 - 0.5px);
+  transform: none;
+  background: repeating-linear-gradient(
+    90deg,
+    rgb(140 153 168 / 0.55) 0 2px,
+    transparent 2px 8px
+  );
+}
+
+/*
+ * Nodes are square. The environment's colour means *live* — a promoted-but-off
+ * node is neutral, so "where is this actually on" is what the eye finds first.
+ */
+.station {
+  width: var(--node);
+  height: var(--node);
+  background: var(--surface-3);
+  box-shadow: inset 0 0 0 2px var(--ink-dim);
+  position: relative;
+  z-index: 1;
+  flex: none;
+}
+
+.station.on {
+  background: var(--c);
+  box-shadow:
+    0 0 0 3px var(--void),
+    0 0 0 5px color-mix(in oklab, var(--c) 30%, transparent),
+    0 0 14px color-mix(in oklab, var(--c) 55%, transparent);
+}
+
+/* Not promoted here: the node is hatched out. */
+.station.absent {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px rgb(140 153 168 / 0.42);
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgb(140 153 168 / 0.32) 0 1px,
+    transparent 1px 4px
+  );
+}
+
+.station-value {
+  font-family: var(--font-data);
+  font-size: 12px;
+  color: var(--ink-dim);
+  text-align: center;
+  max-width: 14ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.station-value.on {
+  color: var(--c);
+}
+
+/* The header states the pipeline once: order, and direction. */
+.pipeline-rule {
+  position: relative;
+}
+
+.pipeline-rule::after {
+  content: "";
+  position: absolute;
+  left: 14%;
+  right: 14%;
+  bottom: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--env-low), var(--env-mid) 50%, var(--env-high));
+  opacity: 0.55;
+}
+
+/* One orchestrated moment: the rails lay themselves in rank order on load. */
+@media (prefers-reduced-motion: no-preference) {
+  .stop::before,
+  .stop::after {
+    animation: lay 0.42s cubic-bezier(0.4, 0, 0.2, 1) backwards;
+    animation-delay: calc(var(--row, 0) * 28ms + var(--rank, 0) * 90ms);
+  }
+
+  .station {
+    animation: arrive 0.28s steps(3, end) backwards;
+    animation-delay: calc(var(--row, 0) * 28ms + var(--rank, 0) * 90ms + 120ms);
+  }
+
+  @keyframes lay {
+    from {
+      clip-path: inset(0 100% 0 0);
+    }
+    to {
+      clip-path: inset(0 0 0 0);
+    }
+  }
+
+  @keyframes arrive {
+    from {
+      opacity: 0;
+      transform: scale(0.3);
+    }
+  }
+}
+
+.flag-key {
+  font-family: var(--font-data);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.flag-name {
+  font-family: var(--font-ui);
+  font-size: 14px;
+  color: var(--ink-dim);
+}
+
+/* ── readouts ──────────────────────────────────────────────────────────── */
+
+/* A leading signal bar, the way a HUD marks the live row. */
+.marker {
+  position: relative;
+  padding-left: 14px;
+}
+
+.marker::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 62%;
+  background: var(--signal);
+}
+
+table {
+  border-collapse: collapse;
+}
+
+/* ── sidebar ───────────────────────────────────────────────────────────── */
+
+/*
+ * A floating console rail rather than a header: it detaches from the edges,
+ * collapses to two-letter codes, and leaves the full width of the page to the
+ * matrix — which is the only thing anyone came here to read.
+ */
+.sidebar {
+  position: fixed;
+  left: 14px;
+  top: 14px;
+  bottom: 14px;
+  width: var(--sidebar-w);
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  z-index: 40;
+  transition: width 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.sidebar-collapsed {
+  --sidebar-w: 60px;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 8px;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 10px;
+  font-family: var(--font-ui);
+  font-weight: 500;
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  white-space: nowrap;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.sidebar-link:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.sidebar-link[aria-current="page"] {
+  background: var(--surface-3);
+  color: var(--ink);
+  box-shadow: inset 3px 0 0 0 var(--signal);
+}
+
+/* The two-letter code is the whole label once collapsed. */
+.sidebar-code {
+  font-family: var(--font-data);
+  flex: none;
+  width: 22px;
+  text-align: center;
+  color: var(--signal);
+  opacity: 0.85;
+}
+
+.sidebar-link[aria-current="page"] .sidebar-code {
+  opacity: 1;
+}
+
+.sidebar-label {
+  transition: opacity 0.12s ease;
+}
+
+.sidebar-collapsed .sidebar-label,
+.sidebar-collapsed .sidebar-hide {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Content sits clear of the rail, and follows it when it collapses. */
+.page-shell {
+  padding-left: calc(var(--sidebar-w) + 28px);
+  padding-right: 14px;
+  transition: padding-left 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (max-width: 860px) {
+  .page-shell {
+    padding-left: 88px;
+  }
+}
+
+/* ── filtering ─────────────────────────────────────────────────────────── */
+
+/*
+ * A scanning mark inside the search field while the server catches up. It sits
+ * still and dim at rest so the field does not jump when it appears.
+ */
+.filter-pulse {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  margin-top: -4px;
+  background: var(--ink-dim);
+  opacity: 0.35;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+.filter-pulse.is-active {
+  background: var(--signal);
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .filter-pulse.is-active {
+    animation: scanning 0.7s steps(2, end) infinite;
+  }
+
+  @keyframes scanning {
+    50% {
+      opacity: 0.25;
+      transform: scaleY(0.4);
+    }
+  }
+}
+
+/* Screen-reader-only, for the live region announcing filter results. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+}
+

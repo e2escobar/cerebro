@@ -1,0 +1,27 @@
+{
+  "name": "@cerebro/db",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./schema": "./src/schema.ts"
+  },
+  "scripts": {
+    "generate": "bun --env-file=../../.env x drizzle-kit generate",
+    "migrate": "bun --env-file=../../.env run src/migrate.ts",
+    "seed": "bun --env-file=../../.env run src/seed.ts",
+    "reset": "bun --env-file=../../.env run src/reset.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.38.3",
+    "postgres": "^3.4.5"
+  },
+  "devDependencies": {
+    "@cerebro/tsconfig": "workspace:*",
+    "@types/bun": "^1.1.14",
+    "drizzle-kit": "^0.30.1",
+    "typescript": "^5.7.2"
+  }
+}

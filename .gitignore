@@ -1,0 +1,12 @@
+node_modules/
+.env
+.env.local
+dist/
+.next/
+out/
+*.tsbuildinfo
+.DS_Store
+.codegen-check.*
+
+# Licensed fonts are not ours to redistribute — see design/direction.md
+apps/web/src/fonts/

@@ -1,0 +1,11 @@
+{
+  "extends": "@cerebro/tsconfig/library.json",
+  // No `paths`. This compiles against the built package exactly as a consumer
+  // sees it — resolving `@cerebro/client` through node_modules and the exports
+  // map — so it catches a declaration bundle that inlined `FlagMap` instead of
+  // importing it, which no amount of source-level typechecking would notice.
+  "compilerOptions": {
+    "types": []
+  },
+  "include": ["test/packaged/**/*.ts", "test/packaged/**/*.tsx"]
+}

@@ -1,4 +1,0 @@
-{
-  "extends": "@cerebro/tsconfig/bun.json",
-  "include": ["src/**/*.ts", "test/typing/**/*.ts"]
-}

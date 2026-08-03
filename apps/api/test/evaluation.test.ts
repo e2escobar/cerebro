@@ -95,6 +95,19 @@ describe("GET /v1/flags", () => {
     expect(Number(headers.get("X-Config-Version"))).toBeGreaterThan(0);
   });
 
+  test("exposes the caching headers to browsers", async () => {
+    const key = await newKey("dev", "server");
+    // Without this a cross-origin caller reads null for both, so it can never
+    // send If-None-Match and the 304 path above is dead in the browser.
+    const { headers } = await anon.get("/v1/flags", { ...bearer(key), Origin: "http://localhost:3000" });
+
+    const exposed = (headers.get("Access-Control-Expose-Headers") ?? "")
+      .split(",")
+      .map((name) => name.trim().toLowerCase());
+    expect(exposed).toContain("etag");
+    expect(exposed).toContain("x-config-version");
+  });
+
   test("If-None-Match returns 304 with no body until a mutation moves the version", async () => {
     const key = await newKey("dev", "server");
     const first = await anon.get("/v1/flags", bearer(key));

@@ -1,0 +1,23 @@
+{
+  "extends": "@cerebro/tsconfig/library.json",
+  "compilerOptions": {
+    // `types: []` keeps Bun's globals out of src. This package is published and
+    // has to run on plain Node and in browsers, so `Bun.write` compiling here
+    // would be a bug that only surfaced after install. Tests get them back in
+    // tsconfig.test.json.
+    "types": [],
+    // Every entry other than the root imports the root by package name, so that
+    // `declare module "@cerebro/client"` in a consumer's generated manifest
+    // reaches the hooks — see README. These paths make that resolve before the
+    // package is built.
+    "baseUrl": ".",
+    "paths": {
+      "@cerebro/client": ["./src/index.ts"],
+      "@cerebro/client/react": ["./src/react/index.ts"],
+      "@cerebro/client/next": ["./src/next/index.ts"]
+    }
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  // Typechecked by tsconfig.cli.json instead, which gives it Node's types.
+  "exclude": ["src/cli"]
+}

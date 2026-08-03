@@ -2,5 +2,5 @@
   "name": "@cerebro/tsconfig",
   "version": "0.1.0",
   "private": true,
-  "files": ["base.json", "bun.json", "next.json"]
+  "files": ["base.json", "bun.json", "library.json", "next.json"]
 }

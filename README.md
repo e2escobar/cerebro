@@ -12,8 +12,8 @@ sees the other's.
 **[docs/overview.md](docs/overview.md)** explains what the service does, with
 diagrams — start there. The specification is [`plan/foundation.md`](plan/foundation.md). All eight phases
 are implemented: scaffold, schema, core domain, management API, evaluation API,
-dashboard, admin surfaces, and the typed SDK. The dashboard's visual direction is
-in [`design/direction.md`](design/direction.md).
+dashboard, admin surfaces, and the typed client library. The dashboard's visual
+direction is in [`design/direction.md`](design/direction.md).
 
 ## Stack
 
@@ -44,18 +44,23 @@ rights on dev and qa, read-only on prod), the three environments, and a
 | `packages/db` | Drizzle schema, migrations, seed — the authoritative data model |
 | `packages/core` | Domain layer: rbac, applications, flags, promotion, payload, audit |
 | `packages/contracts` | Zod schemas and types shared by api and web |
-| `packages/sdk` | Client library and `cerebro-codegen` — see its [README](packages/sdk/README.md) |
+| `packages/client` | `@cerebro/client` — the published library and `cerebro-codegen`, with React and Next entry points. See its [README](packages/client/README.md) |
 | `design/` | Visual direction and the flag matrix reference render |
 | `scripts/` | Acceptance walkthroughs |
 
 The Next.js app never imports `packages/core` or `packages/db` — it talks to the
 API over HTTP, so there is exactly one authorization path.
 
+`packages/client` is the only package meant to leave this repo, so it is also
+the only one that is built rather than consumed as source: `bun run build` emits
+ESM, CommonJS and declarations for its three entry points. Everything else stays
+`private` and exports `src/index.ts` directly.
+
 ## Commands
 
 ```bash
 bun run dev          # Postgres + API + dashboard
-bun test             # 126 tests across core, api and sdk, against a real Postgres
+bun test             # 183 tests across core, api and client, against a real Postgres
 bun run typecheck    # every workspace
 bun run lint
 bun run db:generate  # after editing packages/db/src/schema.ts
@@ -71,7 +76,7 @@ With the API running and the database seeded:
 
 ```bash
 bash scripts/walkthrough.sh        # management API, developer → admin, 19 checks
-bash scripts/evaluation-check.sh   # SDK keys, payloads, ETag caching, isolation, 17 checks
+bash scripts/evaluation-check.sh   # SDK keys, payloads, ETag caching, isolation, 18 checks
 bash scripts/codegen-check.sh      # cerebro-codegen output narrows get() per key
 ```
 

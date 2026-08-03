@@ -86,6 +86,16 @@ STATUS_304="$(curl -sS -o /dev/null -w '%{http_code}' \
   -H "Authorization: Bearer $DEV_KEY" -H "If-None-Match: $ETAG" "$API/v1/flags")"
 check "If-None-Match returns 304" "304" "$STATUS_304"
 
+# ETag is not a CORS-safelisted response header. Without this a browser reads it
+# as null, never sends If-None-Match, and the 304 above never happens in the one
+# place the bandwidth actually matters.
+EXPOSED="$(curl -sS -D - -o /dev/null -H "Origin: http://localhost:3000" \
+  -H "Authorization: Bearer $DEV_KEY" "$API/v1/flags" \
+  | grep -i '^access-control-expose-headers:' | tr -d '\r' | tr 'A-Z' 'a-z')"
+check "browsers can read the caching headers" "ok" \
+  "$(printf '%s' "$EXPOSED" | grep -q 'etag' && printf '%s' "$EXPOSED" | grep -q 'x-config-version' \
+    && echo ok || echo "${EXPOSED:-absent}")"
+
 VERSION_BEFORE="$(curl -sS -H "Authorization: Bearer $DEV_KEY" "$API/v1/config-version" | json_field version)"
 curl -sS -o /dev/null -b "$JAR" -X PUT "$API/v1/mgmt/applications/$APP/flags/new-checkout/environments/dev/enabled" \
   -H 'Content-Type: application/json' -d '{"enabled":false}'

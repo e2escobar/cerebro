@@ -470,7 +470,7 @@ bash scripts/codegen-check.sh      # generated types narrow get() per key
 | `packages/db` | Drizzle schema, migrations, seed — the authoritative data model |
 | `packages/core` | Every domain rule: rbac, applications, flags, promotion, payload, audit. Pure; takes a transaction handle, performs no HTTP, reads no environment variables |
 | `packages/contracts` | Zod schemas and types shared by the API and the dashboard |
-| `packages/sdk` | Client library and `cerebro-codegen` |
+| `packages/client` | `@cerebro/client` — the published library and `cerebro-codegen`, with React and Next entry points |
 | `apps/api` | Hono server — the two route trees |
 | `apps/web` | Next.js dashboard |
 

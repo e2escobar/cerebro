@@ -1,0 +1,10 @@
+{
+  "extends": "@cerebro/tsconfig/library.json",
+  // The generator is the one part of this package that is unambiguously Node —
+  // it reads argv and writes a file. It gets Node's types; the library it lives
+  // beside deliberately does not, so browser code cannot quietly depend on them.
+  "compilerOptions": {
+    "types": ["node"]
+  },
+  "include": ["src/cli/**/*.ts"]
+}

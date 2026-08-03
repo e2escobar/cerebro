@@ -1,50 +1,8 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { createClient, FlagNotFoundError, type CerebroClient } from "../src/index.ts";
+import { createClient, FlagNotFoundError, type CerebroClient } from "../src/index";
+import { stubApi, TEST_KEY } from "./stub-api";
 
-/** The SDK against a stubbed evaluation API — no network, no database. */
-
-interface Stub {
-  fetch: typeof globalThis.fetch;
-  calls: { ifNoneMatch: string | null }[];
-  setPayload: (payload: Record<string, unknown>, version: number) => void;
-}
-
-function stubApi(initial: Record<string, unknown>, version = 1): Stub {
-  let payload = initial;
-  let currentVersion = version;
-  const calls: { ifNoneMatch: string | null }[] = [];
-
-  const fetchImpl = ((input: string | URL | Request, init?: RequestInit) => {
-    const headers = new Headers(init?.headers);
-    const ifNoneMatch = headers.get("If-None-Match");
-    calls.push({ ifNoneMatch });
-
-    if (headers.get("Authorization") !== "Bearer cbr_dev_test") {
-      return Promise.resolve(new Response("{}", { status: 401 }));
-    }
-
-    const etag = `W/"dev-${currentVersion}"`;
-    if (ifNoneMatch === etag) {
-      return Promise.resolve(new Response(null, { status: 304, headers: { ETag: etag } }));
-    }
-
-    return Promise.resolve(
-      new Response(JSON.stringify(payload), {
-        status: 200,
-        headers: { ETag: etag, "X-Config-Version": String(currentVersion) },
-      }),
-    );
-  }) as typeof globalThis.fetch;
-
-  return {
-    fetch: fetchImpl,
-    calls,
-    setPayload(next, nextVersion) {
-      payload = next;
-      currentVersion = nextVersion;
-    },
-  };
-}
+/** The client against a stubbed evaluation API — no network, no database. */
 
 let client: CerebroClient | null = null;
 
@@ -56,7 +14,7 @@ afterEach(() => {
 describe("createClient", () => {
   test("loads the payload and exposes values by key", async () => {
     const api = stubApi({ "new-checkout": true, "max-cart-items": 50 });
-    client = createClient({ apiKey: "cbr_dev_test", baseUrl: "http://flags.test", fetch: api.fetch });
+    client = createClient({ apiKey: TEST_KEY, baseUrl: "http://flags.test", fetch: api.fetch });
 
     await client.ready();
 
@@ -69,7 +27,7 @@ describe("createClient", () => {
 
   test("throws for a flag that is absent here, unless given a fallback", async () => {
     const api = stubApi({ "new-checkout": true });
-    client = createClient({ apiKey: "cbr_dev_test", baseUrl: "http://flags.test", fetch: api.fetch });
+    client = createClient({ apiKey: TEST_KEY, baseUrl: "http://flags.test", fetch: api.fetch });
     await client.ready();
 
     expect(() => client!.get("not-promoted-here")).toThrow(FlagNotFoundError);
@@ -81,7 +39,7 @@ describe("createClient", () => {
   test("sends If-None-Match once it has an ETag", async () => {
     const api = stubApi({ a: 1 });
     client = createClient({
-      apiKey: "cbr_dev_test",
+      apiKey: TEST_KEY,
       baseUrl: "http://flags.test",
       fetch: api.fetch,
       autoStart: false,
@@ -97,7 +55,7 @@ describe("createClient", () => {
   test("a 304 leaves values and listeners alone", async () => {
     const api = stubApi({ a: 1 });
     client = createClient({
-      apiKey: "cbr_dev_test",
+      apiKey: TEST_KEY,
       baseUrl: "http://flags.test",
       fetch: api.fetch,
       autoStart: false,
@@ -116,7 +74,7 @@ describe("createClient", () => {
   test("reports exactly what changed", async () => {
     const api = stubApi({ "new-checkout": false, keep: "same" });
     client = createClient({
-      apiKey: "cbr_dev_test",
+      apiKey: TEST_KEY,
       baseUrl: "http://flags.test",
       fetch: api.fetch,
       autoStart: false,
@@ -139,7 +97,7 @@ describe("createClient", () => {
   test("a removed flag is reported and then absent", async () => {
     const api = stubApi({ doomed: true });
     client = createClient({
-      apiKey: "cbr_dev_test",
+      apiKey: TEST_KEY,
       baseUrl: "http://flags.test",
       fetch: api.fetch,
       autoStart: false,
@@ -155,7 +113,7 @@ describe("createClient", () => {
   test("unsubscribing stops notifications", async () => {
     const api = stubApi({ a: 1 });
     client = createClient({
-      apiKey: "cbr_dev_test",
+      apiKey: TEST_KEY,
       baseUrl: "http://flags.test",
       fetch: api.fetch,
       autoStart: false,

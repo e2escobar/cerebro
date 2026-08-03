@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["bun"]
+  },
+  // The generated manifest is a module augmentation, so it has to compile on
+  // its own — in a program that also holds src, the augmentation would apply to
+  // every other test too.
+  "include": ["src/**/*.ts", "src/**/*.tsx", "test/typing/**/*.ts", "test/typing/**/*.tsx"]
+}

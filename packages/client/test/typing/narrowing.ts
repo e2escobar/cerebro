@@ -1,14 +1,13 @@
 /**
- * Phase 7 acceptance (spec §11): with the generated flag map in scope,
- * `get()` narrows per key.
+ * With the generated manifest in scope, `get()` narrows per key.
  *
  * Compiled by `bun run typecheck`. The negative cases are asserted with
- * `@ts-expect-error`, which fails the build if the error stops happening —
- * so this file breaks in both directions.
+ * `@ts-expect-error`, which fails the build if the error stops happening — so
+ * this file breaks in both directions.
  */
 
-import { createClient } from "../../src/index.ts";
-import "./cerebro-flags.d.ts";
+import { createClient } from "@cerebro/client";
+import "./cerebro.manifest";
 
 const client = createClient({
   apiKey: "cbr_dev_example",

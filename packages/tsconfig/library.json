@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "./base.json",
+  // For packages that are built and published rather than consumed as source.
+  // Deliberately not bun.json: `allowImportingTsExtensions` would leak `.ts`
+  // specifiers into the emitted declarations, and `types: ["bun"]` would let
+  // Bun globals compile in code that has to run on plain Node and in browsers.
+  "compilerOptions": {
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "jsxImportSource": "react"
+  }
+}

@@ -53,7 +53,8 @@ export default function NewFlagPage() {
             title="Lowercase letters, digits and dashes, 2–64 characters"
           />
           <span className="text-xs" style={{ color: "var(--ink-dim)" }}>
-            Permanent. This is what your code will ask for.
+            This is what your code will ask for. It can be changed later, but everything reading
+            the flag has to be changed with it.
           </span>
         </label>
 

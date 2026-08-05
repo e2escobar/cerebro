@@ -4,6 +4,7 @@ import { auditLog, type Tx } from "@cerebro/db";
 export type AuditAction =
   | "flag.created"
   | "flag.updated"
+  | "flag.key_changed"
   | "flag.archived"
   | "flag.restored"
   | "flag.promoted"

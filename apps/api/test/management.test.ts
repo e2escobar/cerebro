@@ -138,14 +138,21 @@ describe("flags", () => {
     expect(prod?.enabled).toBe(false);
   });
 
-  test("PATCH cannot change type or key", async () => {
+  test("PATCH can change the key but never the type", async () => {
     await dev.post(`/v1/mgmt/applications/${APP}/flags`, NEW_FLAG);
-    await dev.patch(`/v1/mgmt/applications/${APP}/flags/new-checkout`, { name: "Renamed", type: "string", key: "other" });
+    const { body: patched } = await dev.patch<FlagDetail>(
+      `/v1/mgmt/applications/${APP}/flags/new-checkout`,
+      { name: "Renamed", type: "string", key: "checkout-v2" },
+    );
 
-    const { body } = await dev.get<FlagDetail>(`/v1/mgmt/applications/${APP}/flags/new-checkout`);
-    expect(body.name).toBe("Renamed");
+    // The response already speaks in the new key — that is where the flag lives.
+    expect(patched.key).toBe("checkout-v2");
+    expect(patched.name).toBe("Renamed");
+    expect(patched.type).toBe("boolean");
+
+    expect((await dev.get(`/v1/mgmt/applications/${APP}/flags/new-checkout`)).status).toBe(404);
+    const { body } = await dev.get<FlagDetail>(`/v1/mgmt/applications/${APP}/flags/checkout-v2`);
     expect(body.type).toBe("boolean");
-    expect(body.key).toBe("new-checkout");
   });
 
   test("demotion is admin only", async () => {

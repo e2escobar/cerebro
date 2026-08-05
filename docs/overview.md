@@ -365,6 +365,7 @@ need an explicit grant per environment: `read`, `write`, `toggle` or `promote`.
 | Manage **people and permissions** | admin |
 | **Demote** a flag | admin |
 | Create a flag, edit its metadata, archive, restore | `write` on the **rank-0** environment |
+| **Rename** a flag's key, or archive it, once it is promoted above rank 0 | admin |
 | Set a flag's **value** in environment E | `write` on E |
 | **Toggle** a flag in E | `toggle` on E |
 | **Promote** a flag into E | `promote` on E |

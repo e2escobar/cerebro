@@ -727,13 +727,19 @@ export const openApiDocument = withOperationIds({
       patch: {
         tags: ["Flags"],
         security: SESSION,
-        summary: "Edit name, description or client-safety",
-        description: "`key` and `type` are immutable and are ignored if sent. Changing `isClientSafe` moves every environment's config version, because it changes what client keys see everywhere.",
+        summary: "Edit the key, name, description or client-safety",
+        description: [
+          "`type` is immutable and is ignored if sent.",
+          "",
+          "Changing `key` or `isClientSafe` moves every environment's config version, because both change the payload itself rather than one environment's copy of it. A rename is a breaking change: anything still asking for the old key receives nothing and falls back to its own default. It needs admin, or `write` on rank 0 with the flag unpromoted above it — the same guard as archiving.",
+          "",
+          "The response carries the new key, which is where the flag lives from now on.",
+        ].join("\n"),
         parameters: pathParams(APP_KEY_PARAM, FLAG_KEY_PARAM),
         requestBody: body(updateFlagRequest),
         responses: {
           200: json(ref("FlagDetail"), "The updated flag."),
-          ...errors("VALIDATION_FAILED", "UNAUTHENTICATED", "FORBIDDEN", "FLAG_NOT_FOUND", "FLAG_ARCHIVED"),
+          ...errors("VALIDATION_FAILED", "UNAUTHENTICATED", "FORBIDDEN", "FLAG_NOT_FOUND", "FLAG_KEY_TAKEN", "FLAG_ARCHIVED"),
         },
       },
     },

@@ -5,6 +5,7 @@ import type { DomainError } from "../src/errors.ts";
 import {
   archiveFlag,
   createFlag,
+  getFlag,
   restoreFlag,
   setValue,
   toggle,
@@ -227,6 +228,40 @@ describe("updateFlag, archive and restore", () => {
 
     await updateFlag(ctx(), app(), "meta", { isClientSafe: true });
     expect(Object.values(await versions())).toEqual(before.map((v) => v + 1));
+  });
+
+  test("a key change moves every environment's version and is audited as its own event", async () => {
+    const before = Object.values(await versions());
+    await updateFlag(ctx(), app(), "meta", { key: "meta-2", name: "Renamed" });
+
+    // The payload changed everywhere the flag appears, so every version moves.
+    expect(Object.values(await versions())).toEqual(before.map((v) => v + 1));
+
+    const renamed = await getFlag(db, app(), "meta-2");
+    expect(renamed.name).toBe("Renamed");
+    expect(await codeOf(() => getFlag(db, app(), "meta"))).toBe("FLAG_NOT_FOUND");
+
+    const actions = (await db.select().from(auditLog)).map((a) => a.action);
+    expect(actions).toContain("flag.key_changed");
+    expect(actions).not.toContain("flag.updated");
+  });
+
+  test("a key already in the application is refused, and an invalid one too", async () => {
+    await createFlag(ctx(), { applicationId: app(), key: "taken", name: "Taken", type: "boolean", defaultValue: false });
+
+    expect(await codeOf(() => updateFlag(ctx(), app(), "meta", { key: "taken" }))).toBe("FLAG_KEY_TAKEN");
+    expect(await codeOf(() => updateFlag(ctx(), app(), "meta", { key: "Not A Key" }))).toBe("VALIDATION_FAILED");
+
+    // Neither attempt touched the flag.
+    expect((await getFlag(db, app(), "meta")).key).toBe("meta");
+  });
+
+  test("a developer cannot rename a flag promoted above the base environment", async () => {
+    await promoteFlag(ctx(), app(), "meta", "qa");
+    expect(await codeOf(() => updateFlag(ctx(), app(), "meta", { key: "meta-2" }))).toBe("FORBIDDEN");
+    // ...but an admin can.
+    await updateFlag(ctx(fixture.admin), app(), "meta", { key: "meta-2" });
+    expect((await getFlag(db, app(), "meta-2")).id).toBeString();
   });
 
   test("archive then restore round-trips and rejects the wrong state", async () => {

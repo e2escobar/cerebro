@@ -228,7 +228,7 @@ CREATE INDEX ON audit_log (entity_type, entity_id);
 
 ### Audit action vocabulary
 
-`flag.created`, `flag.updated`, `flag.archived`, `flag.restored`, `flag.promoted`, `flag.demoted`, `flag.enabled`, `flag.disabled`, `flag.value_changed`, `environment.created`, `environment.updated`, `environment.reordered`, `environment.deleted`, `api_key.created`, `api_key.revoked`, `user.created`, `user.updated`, `user.disabled`, `permission.granted`, `permission.revoked`.
+`flag.created`, `flag.updated`, `flag.key_changed`, `flag.archived`, `flag.restored`, `flag.promoted`, `flag.demoted`, `flag.enabled`, `flag.disabled`, `flag.value_changed`, `environment.created`, `environment.updated`, `environment.reordered`, `environment.deleted`, `api_key.created`, `api_key.revoked`, `user.created`, `user.updated`, `user.disabled`, `permission.granted`, `permission.revoked`.
 
 ---
 
@@ -237,6 +237,7 @@ CREATE INDEX ON audit_log (entity_type, entity_id);
 ### 5.1 Flag types
 
 - `type` is set at creation and is **immutable**. There is no endpoint to change it.
+- `key` **can** be changed, through `PATCH /flags/:key`. It is a breaking change — the flag leaves the payload under its old name — so it is guarded like an archive: admin, or `write` on rank 0 with the flag unpromoted above it. A rename bumps `config_version` on every environment of that application and writes a `flag.key_changed` audit row.
 - Value validation is keyed off `type`, implemented in `packages/core/src/flag-value.ts`:
   - `boolean` → Zod `z.boolean()`
   - `string` → `z.string()`
@@ -406,7 +407,7 @@ Authenticated by session cookie `ff_session` (httpOnly, secure, sameSite=lax).
 | GET | `/v1/mgmt/flags` | Full list. Query: `q`, `type`, `environment`, `state`, `archived`, `cursor`, `limit`. Each item includes the full per-environment matrix. |
 | POST | `/v1/mgmt/flags` | `{ key, name, description, type, defaultValue, isClientSafe, initialValue? }` |
 | GET | `/v1/mgmt/flags/:key` | Full record + environment states + promotion history + recent audit |
-| PATCH | `/v1/mgmt/flags/:key` | `name`, `description`, `isClientSafe` only. Never `type` or `key`. |
+| PATCH | `/v1/mgmt/flags/:key` | `key`, `name`, `description`, `isClientSafe`. Never `type`. A `key` change responds under the new key. |
 | POST | `/v1/mgmt/flags/:key/archive` | |
 | POST | `/v1/mgmt/flags/:key/restore` | |
 | PUT | `/v1/mgmt/flags/:key/environments/:envKey/value` | `{ value }` |

@@ -160,12 +160,18 @@ export async function createFlag(ctx: Ctx, input: CreateFlagInput): Promise<Flag
 }
 
 export interface UpdateFlagInput {
+  /** Renaming the key is a breaking change for consumers — see `assertCanChangeKey`. */
+  key?: string;
   name?: string;
   description?: string;
   isClientSafe?: boolean;
 }
 
-/** Metadata only. `type` and `key` are immutable (spec §5.1, §7.2). */
+/**
+ * Metadata, plus the key. `type` stays immutable (spec §5.1) because values
+ * already stored under the old type would have to be reinterpreted; a key is
+ * only a name, so it can move — under the guards in `assertCanChangeKey`.
+ */
 export async function updateFlag(
   ctx: Ctx,
   applicationId: string,
@@ -179,9 +185,14 @@ export async function updateFlag(
   const before = await getFlag(db, applicationId, key);
   assertNotArchived(before);
 
+  const nextKey = patch.key ?? before.key;
+  const keyChanged = nextKey !== before.key;
+  if (keyChanged) await assertCanChangeKey(ctx, before, applicationId, nextKey);
+
   const [updated] = await db
     .update(flag)
     .set({
+      key: nextKey,
       name: patch.name ?? before.name,
       description: patch.description ?? before.description,
       isClientSafe: patch.isClientSafe ?? before.isClientSafe,
@@ -191,15 +202,20 @@ export async function updateFlag(
     .returning();
   if (!updated) throw new Error("failed to update flag");
 
-  // `is_client_safe` changes what client keys see in *every* environment,
-  // but only for this application (spec §9).
-  if (patch.isClientSafe !== undefined && patch.isClientSafe !== before.isClientSafe) {
+  // Both of these change the payload itself rather than one environment's copy
+  // of it: `is_client_safe` changes what client keys see everywhere, and the
+  // key is the name every consumer reads the flag by (spec §9).
+  const clientSafetyChanged =
+    patch.isClientSafe !== undefined && patch.isClientSafe !== before.isClientSafe;
+  if (keyChanged || clientSafetyChanged) {
     await bumpAllConfigVersions(db, applicationId);
   }
 
   await writeAudit(db, {
     actorId: actor.id,
-    action: "flag.updated",
+    // A rename is the headline event when one happens — an operator reading the
+    // log for "why did this flag vanish" must not have to open a diff to find it.
+    action: keyChanged ? "flag.key_changed" : "flag.updated",
     entityType: "flag",
     entityId: before.id,
     applicationId,
@@ -210,6 +226,63 @@ export async function updateFlag(
   return updated;
 }
 
+/** Environments above rank 0 where the flag is live — the consumers reading it today. */
+async function promotedAboveBase(db: Tx, flagId: string, baseRank: number): Promise<boolean> {
+  const rows = await db
+    .select({ environmentId: flagEnvironment.environmentId })
+    .from(flagEnvironment)
+    .innerJoin(environment, eq(environment.id, flagEnvironment.environmentId))
+    .where(
+      and(
+        eq(flagEnvironment.flagId, flagId),
+        eq(flagEnvironment.state, "promoted"),
+        gt(environment.rank, baseRank),
+      ),
+    );
+
+  return rows.length > 0;
+}
+
+/**
+ * Renaming is guarded like an archive (§5.6), and for the same reason: both
+ * make the flag disappear from a payload someone is already reading. Anything
+ * still asking for the old key falls back to its own default.
+ */
+async function assertCanChangeKey(
+  ctx: Ctx,
+  target: Flag,
+  applicationId: string,
+  nextKey: string,
+): Promise<void> {
+  const { db, actor } = ctx;
+  const base = await getBaseEnvironment(db);
+  assertCan(actor, "flag.rename", base.id);
+
+  if (!FLAG_KEY_PATTERN.test(nextKey)) {
+    throw new ValidationError("VALIDATION_FAILED", "Invalid flag key", { key: nextKey });
+  }
+
+  // Archived flags hold their keys too — the unique index covers them.
+  const [taken] = await db
+    .select({ id: flag.id })
+    .from(flag)
+    .where(and(eq(flag.applicationId, applicationId), eq(flag.key, nextKey)))
+    .limit(1);
+  if (taken) {
+    throw new Conflict("FLAG_KEY_TAKEN", `This application already has a flag '${nextKey}'`, {
+      key: nextKey,
+    });
+  }
+
+  if (actor.role === "admin") return;
+  if (await promotedAboveBase(db, target.id, base.rank)) {
+    throw new Forbidden(
+      "Only an admin can change the key of a flag promoted above the base environment",
+      { key: target.key },
+    );
+  }
+}
+
 /** Archive requires admin, or `write` on rank 0 with the flag unpromoted above it (§5.6). */
 async function assertCanArchive(ctx: Ctx, target: Flag, action: "flag.archive" | "flag.restore") {
   const { db, actor } = ctx;
@@ -217,19 +290,7 @@ async function assertCanArchive(ctx: Ctx, target: Flag, action: "flag.archive" |
   assertCan(actor, action, base.id);
   if (actor.role === "admin") return;
 
-  const promotedAbove = await db
-    .select({ environmentId: flagEnvironment.environmentId })
-    .from(flagEnvironment)
-    .innerJoin(environment, eq(environment.id, flagEnvironment.environmentId))
-    .where(
-      and(
-        eq(flagEnvironment.flagId, target.id),
-        eq(flagEnvironment.state, "promoted"),
-        gt(environment.rank, base.rank),
-      ),
-    );
-
-  if (promotedAbove.length > 0) {
+  if (await promotedAboveBase(db, target.id, base.rank)) {
     throw new Forbidden("Only an admin can archive a flag promoted above the base environment", {
       key: target.key,
     });

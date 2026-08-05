@@ -115,9 +115,28 @@ export async function updateFlagMetadata(
   patch: { name?: string; description?: string; isClientSafe?: boolean },
 ): Promise<ActionResult> {
   return run(() => api(`/v1/mgmt/applications/${appKey}/flags/${flagKey}`, { method: "PATCH", body: patch }), [
-    "/",
-    `/flags/${flagKey}`,
+    `/apps/${appKey}`,
+    `/apps/${appKey}/flags/${flagKey}`,
   ]);
+}
+
+/**
+ * Renaming moves the flag's URL, so this redirects rather than returning on
+ * success — the page the caller is standing on no longer exists.
+ */
+export async function renameFlagKey(
+  appKey: string,
+  flagKey: string,
+  key: string,
+): Promise<ActionResult> {
+  const result = await run(
+    () =>
+      api(`/v1/mgmt/applications/${appKey}/flags/${flagKey}`, { method: "PATCH", body: { key } }),
+    [`/apps/${appKey}`, `/apps/${appKey}/flags/${flagKey}`],
+  );
+  if (!result.ok) return result;
+
+  redirect(`/apps/${appKey}/flags/${key}`);
 }
 
 export async function archiveFlag(appKey: string, flagKey: string, archived: boolean): Promise<ActionResult> {

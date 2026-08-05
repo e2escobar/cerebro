@@ -185,8 +185,11 @@ flagRoutes.patch("/:key", async (c) => {
   const key = c.req.param("key");
 
   const application = await app(c);
-  await db.transaction((tx) => updateFlag({ db: tx, actor }, application.id, key, patch));
-  return c.json(await buildFlagDetail(actor, application, key));
+  // The patch may have moved the key, so read the detail back under the new one.
+  const updated = await db.transaction((tx) =>
+    updateFlag({ db: tx, actor }, application.id, key, patch),
+  );
+  return c.json(await buildFlagDetail(actor, application, updated.key));
 });
 
 flagRoutes.post("/:key/archive", async (c) => {

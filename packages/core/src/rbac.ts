@@ -28,6 +28,7 @@ export type Action =
   | "permission.manage"
   | "flag.create"
   | "flag.update_metadata"
+  | "flag.rename"
   | "flag.archive"
   | "flag.restore"
   | "flag.set_value"
@@ -58,7 +59,10 @@ const REQUIREMENTS: Record<Action, Requirement> = {
   "flag.create": { kind: "base-environment", permission: "write" },
   "flag.update_metadata": { kind: "base-environment", permission: "write" },
   // The additional "not promoted above rank 0" condition is a domain rule,
-  // enforced in flags.ts — it depends on flag state, not on the actor.
+  // enforced in flags.ts — it depends on flag state, not on the actor. It
+  // applies to renaming for the same reason it applies to archiving: both take
+  // the flag out of a payload someone is already reading.
+  "flag.rename": { kind: "base-environment", permission: "write" },
   "flag.archive": { kind: "base-environment", permission: "write" },
   "flag.restore": { kind: "base-environment", permission: "write" },
   "flag.set_value": { kind: "environment", permission: "write" },

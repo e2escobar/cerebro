@@ -6,10 +6,10 @@ import { useState, useTransition } from "react";
 import { createApplication, deleteApplication, updateApplication } from "@/app/(app)/admin-actions";
 import type { ActionResult } from "@/app/(app)/flags-actions";
 import { ConfirmAction } from "@/components/confirm-action";
+import { Modal, ModalActions } from "@/components/modal";
 
 export function ApplicationManager({ applications }: { applications: ApplicationSummary[] }) {
   const [message, setMessage] = useState<string | null>(null);
-  const [pending, startTransition] = useTransition();
 
   function report(result: ActionResult) {
     setMessage(result.ok ? null : result.message);
@@ -39,18 +39,7 @@ export function ApplicationManager({ applications }: { applications: Application
                 {app.flagCount} flag{app.flagCount === 1 ? "" : "s"}
               </span>
 
-              <button
-                className="btn"
-                type="button"
-                disabled={pending}
-                onClick={() => {
-                  const name = window.prompt("New name", app.name);
-                  if (!name || name === app.name) return;
-                  startTransition(async () => report(await updateApplication(app.key, { name })));
-                }}
-              >
-                Rename
-              </button>
+              <RenameApplication app={app} onResult={report} />
 
               <ConfirmAction
                 label="Delete"
@@ -73,6 +62,89 @@ export function ApplicationManager({ applications }: { applications: Application
       )}
 
       <NewApplication onResult={report} />
+    </>
+  );
+}
+
+/**
+ * The name is the only thing an application can change — the key is stamped
+ * into every SDK key already issued for it, so it stays where it is.
+ */
+function RenameApplication({
+  app,
+  onResult,
+}: {
+  app: ApplicationSummary;
+  onResult: (result: ActionResult) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState(app.name);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  function save() {
+    startTransition(async () => {
+      const result = await updateApplication(app.key, { name: name.trim() });
+      onResult(result);
+      if (result.ok) setOpen(false);
+      else setError(result.message);
+    });
+  }
+
+  return (
+    <>
+      <button
+        className="btn"
+        type="button"
+        onClick={() => {
+          setName(app.name);
+          setError(null);
+          setOpen(true);
+        }}
+      >
+        Rename
+      </button>
+
+      {open && (
+        <Modal title={`Rename ${app.key}`} onClose={() => setOpen(false)}>
+          <p className="mt-2 text-sm" style={{ color: "var(--ink-dim)" }}>
+            The key stays <code className="hud text-[13px]" style={{ color: "var(--signal)" }}>{app.key}</code> — it
+            is what every SDK key for this application was issued against.
+          </p>
+
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              save();
+            }}
+          >
+            <label className="mt-4 flex flex-col gap-2">
+              <span className="text-sm" style={{ color: "var(--ink-dim)" }}>
+                Name
+              </span>
+              <input
+                className="field"
+                value={name}
+                required
+                maxLength={200}
+                onChange={(event) => setName(event.target.value)}
+              />
+            </label>
+
+            {error && (
+              <p role="alert" className="mt-3 text-[13px]" style={{ color: "var(--signal)" }}>
+                {error}
+              </p>
+            )}
+
+            <ModalActions
+              confirmLabel={pending ? "Saving…" : "Save"}
+              onCancel={() => setOpen(false)}
+              disabled={pending || name.trim() === "" || name.trim() === app.name}
+            />
+          </form>
+        </Modal>
+      )}
     </>
   );
 }

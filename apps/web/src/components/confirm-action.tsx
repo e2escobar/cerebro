@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import type { ActionResult } from "@/app/(app)/flags-actions";
+import { Modal, ModalActions } from "@/components/modal";
 
 /**
  * A button that runs a server action.
@@ -35,11 +36,6 @@ export function ConfirmAction({
   const [open, setOpen] = useState(false);
   const [typed, setTyped] = useState("");
   const [pending, startTransition] = useTransition();
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (open) inputRef.current?.focus();
-  }, [open]);
 
   function run() {
     startTransition(async () => {
@@ -70,30 +66,22 @@ export function ConfirmAction({
       )}
 
       {open && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-6"
-          style={{ background: "rgb(0 0 0 / 0.82)" }}
-          role="dialog"
-          aria-modal="true"
-          aria-label={title ?? label}
-          onKeyDown={(event) => {
-            if (event.key === "Escape") setOpen(false);
-          }}
+        <Modal
+          title={title ?? label}
+          description={description}
+          onClose={() => setOpen(false)}
         >
-          <div className="panel panel-ticks w-full max-w-md p-6">
-            <h2 className="title text-base">{title ?? label}</h2>
-            {description && (
-              <p className="mt-2 text-sm" style={{ color: "var(--ink-dim)" }}>
-                {description}
-              </p>
-            )}
-
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              run();
+            }}
+          >
             <label className="mt-4 flex flex-col gap-2">
               <span className="text-sm" style={{ color: "var(--ink-dim)" }}>
                 Type <code className="hud text-[13px]" style={{ color: "var(--signal)" }}>{confirmWith}</code> to continue
               </span>
               <input
-                ref={inputRef}
                 className="field"
                 value={typed}
                 spellCheck={false}
@@ -102,21 +90,13 @@ export function ConfirmAction({
               />
             </label>
 
-            <div className="mt-5 flex justify-end gap-2">
-              <button type="button" className="btn" onClick={() => setOpen(false)}>
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="btn btn-primary"
-                disabled={typed !== confirmWith || pending}
-                onClick={run}
-              >
-                {pending ? (pendingLabel ?? "Working…") : label}
-              </button>
-            </div>
-          </div>
-        </div>
+            <ModalActions
+              confirmLabel={pending ? (pendingLabel ?? "Working…") : label}
+              onCancel={() => setOpen(false)}
+              disabled={typed !== confirmWith || pending}
+            />
+          </form>
+        </Modal>
       )}
     </>
   );

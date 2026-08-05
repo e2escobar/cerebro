@@ -54,6 +54,8 @@ export const createFlagRequest = z.object({
 
 export const updateFlagRequest = z
   .object({
+    /** Renaming breaks every consumer still reading the old key — see §5.1. */
+    key: FLAG_KEY.optional(),
     name: z.string().min(1).max(200).optional(),
     description: z.string().max(2000).optional(),
     isClientSafe: z.boolean().optional(),

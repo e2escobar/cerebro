@@ -129,10 +129,10 @@ Scale, a step up from the first pass because a console is read at a glance:
 ## Navigation
 
 A **floating console rail** down the left, not a header. It detaches from the
-edges, collapses to two-letter codes (`FL`, `AU`, `PI`) at 60px, and remembers
-which state you left it in. A header would spend the most valuable strip of the
-page on five links; the rail gives the full width back to the matrix, which is
-the only thing anyone opened this to read.
+edges, and each destination is stamped with a two-letter code (`FL`, `AU`, `PI`)
+in front of its label. A header would spend the most valuable strip of the page
+on five links; the rail gives the full width back to the matrix, which is the
+only thing anyone opened this to read.
 
 ## Geometry
 

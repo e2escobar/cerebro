@@ -527,9 +527,9 @@ table {
 /* ── sidebar ───────────────────────────────────────────────────────────── */
 
 /*
- * A floating console rail rather than a header: it detaches from the edges,
- * collapses to two-letter codes, and leaves the full width of the page to the
- * matrix — which is the only thing anyone came here to read.
+ * A floating console rail rather than a header: it detaches from the edges and
+ * leaves the full width of the page to the matrix — which is the only thing
+ * anyone came here to read.
  */
 .sidebar {
   position: fixed;
@@ -541,12 +541,7 @@ table {
   display: flex;
   flex-direction: column;
   z-index: 40;
-  transition: width 0.18s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
-}
-
-.sidebar-collapsed {
-  --sidebar-w: 60px;
 }
 
 .sidebar-nav {
@@ -582,7 +577,7 @@ table {
   box-shadow: inset 3px 0 0 0 var(--signal);
 }
 
-/* The two-letter code is the whole label once collapsed. */
+/* The two-letter code that stands in front of each label. */
 .sidebar-code {
   font-family: var(--font-data);
   flex: none;
@@ -596,27 +591,10 @@ table {
   opacity: 1;
 }
 
-.sidebar-label {
-  transition: opacity 0.12s ease;
-}
-
-.sidebar-collapsed .sidebar-label,
-.sidebar-collapsed .sidebar-hide {
-  opacity: 0;
-  pointer-events: none;
-}
-
-/* Content sits clear of the rail, and follows it when it collapses. */
+/* Content sits clear of the rail. */
 .page-shell {
   padding-left: calc(var(--sidebar-w) + 28px);
   padding-right: 14px;
-  transition: padding-left 0.18s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-@media (max-width: 860px) {
-  .page-shell {
-    padding-left: 88px;
-  }
 }
 
 /* ── filtering ─────────────────────────────────────────────────────────── */
